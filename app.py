@@ -1,24 +1,32 @@
 from flask import Flask, jsonify
 from flask_restful import Api
 from flask_jwt_extended import JWTManager
+from flask_cors import CORS, cross_origin
 from blacklist import BLACKLIST
 import urllib
-
 from resources.user import UserRegister, User, UsersList, UserLogin, TokenRefresh, UserLogout
 from models.user import UserModel
-from resources.item import Item, ItemList
+import models.parameters as prm
+from resources.records import (
+        Record_by_license,
+        RecordList,
+        Record_by_state,
+        Record_by_Individual_name,
+        Record_by_license_and_state,
+        Record_by_company_name)
+
 
 app = Flask(__name__)
+CORS(app)
 quoted = urllib.parse.quote_plus('DRIVER={SQL Server};SERVER=KUJTIM_OFFICEPC\SQL_API_SERVER;DATABASE=APIDB;Trusted_Connection=yes;')
-app.config['SQLALCHEMY_DATABASE_URI'] = "mssql+pyodbc:///sa:Mitjuk009!S@?odbc_connect={}".format(quoted)
+app.config['SQLALCHEMY_DATABASE_URI'] = "mssql+pyodbc:///{}:{}@?odbc_connect={}".format(prm.sql_username, prm.sql_password, quoted)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PROPAGATE_EXCEPTIONS'] = True
-app.config['JWT_SECRET_KEY'] = 'FRMGRFC999'
+app.config['JWT_SECRET_KEY'] = prm.jwt_secret_key_stored
 app.config['JWT_BLACKLIST_ENABLED'] = True
 app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
 
 api = Api(app)
-
 
 @app.before_first_request
 def create_tables():
@@ -80,16 +88,21 @@ def token_not_fresh_callback():
     }), 401
 
 
-api.add_resource(Item, '/item/<string:name>')
-api.add_resource(ItemList, '/items')
+api.add_resource(Record_by_license, '/licence/<int:license>')
+api.add_resource(Record_by_state, '/state/<string:state>')
+api.add_resource(Record_by_Individual_name, '/full_name/<string:individual>')
+api.add_resource(RecordList, '/all_records')
 api.add_resource(UserRegister, '/register')
 api.add_resource(User, '/user/<int:user_id>')
 api.add_resource(UsersList, '/users')
 api.add_resource(UserLogin, '/auth')
 api.add_resource(TokenRefresh, '/refresh')
 api.add_resource(UserLogout, '/logout')
+api.add_resource(Record_by_license_and_state, '/lic_state')
+api.add_resource(Record_by_company_name, '/company_name/<string:company>')
 
 if __name__ == '__main__':
     from db import db
     db.init_app(app)
+
     app.run(port=5000, debug=True)

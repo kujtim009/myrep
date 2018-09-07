@@ -2,3 +2,5 @@ Flask-JWT
 Flask-JWT-Extended
 Flask-Restful
 Flask-SQLAlchemy
+Flask-marshmallow
+marshmallow-SQLAlchemy
