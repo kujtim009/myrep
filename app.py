@@ -4,7 +4,14 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS, cross_origin
 from blacklist import BLACKLIST
 import urllib
-from resources.user import UserRegister, User, UsersList, UserLogin, TokenRefresh, UserLogout
+from resources.user import (
+        UserRegister, 
+        User, 
+        UsersList, 
+        UserLogin, 
+        TokenRefresh, 
+        UserLogout, 
+        Add_allowed_fields)
 from models.user import UserModel
 import models.parameters as prm
 from resources.records import (
@@ -13,7 +20,8 @@ from resources.records import (
         Record_by_state,
         Record_by_Individual_name,
         Record_by_license_and_state,
-        Record_by_company_name)
+        Record_by_company_name,
+        getCurUserFields)
 
 
 app = Flask(__name__)
@@ -100,6 +108,8 @@ api.add_resource(TokenRefresh, '/refresh')
 api.add_resource(UserLogout, '/logout')
 api.add_resource(Record_by_license_and_state, '/lic_state')
 api.add_resource(Record_by_company_name, '/company_name/<string:company>')
+api.add_resource(getCurUserFields, '/usersField')
+api.add_resource(Add_allowed_fields, '/addUserFields')
 
 if __name__ == '__main__':
     from db import db

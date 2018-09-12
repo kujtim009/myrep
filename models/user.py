@@ -1,13 +1,15 @@
 from db import db
-from flask_jwt_extended import get_jwt_claims
+from flask_jwt_extended import get_jwt_claims, get_jwt_identity
+
 
 class UserModel(db.Model):
-    __tablename__ = 'users'
+    __tablename__ = 'Users'
 
-    id = db.Column(db.Integer, primary_key=True)
+    ID = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80))
     password = db.Column(db.String(80))
     access_level = db.Column(db.String(80))
+    
 
     def __init__(self, username, password, access_level):
         self.username = username
@@ -16,7 +18,7 @@ class UserModel(db.Model):
 
     def json(self):
         return {
-            'id': self.id,
+            'id': self.ID,
             'username': self.username,
             'access_level': self.access_level
             }
@@ -35,7 +37,7 @@ class UserModel(db.Model):
 
     @classmethod
     def find_by_id(cls, _id):
-        return cls.query.filter_by(id=_id).first()
+        return cls.query.filter_by(ID=_id).first()
 
     @classmethod
     def is_admin(cls):
@@ -43,3 +45,45 @@ class UserModel(db.Model):
         if access == 1:
             return True
         return False
+
+    
+class Userinfo(db.Model):
+    __tablename__ = 'Users_info'
+
+    ID = db.Column(db.Integer, primary_key=True)
+    User_id = db.Column(db.Integer, db.ForeignKey('Users.ID'))
+    File_id = db.Column(db.Integer)
+    File_name = db.Column(db.String(100))
+    Field_name = db.Column(db.String(100))
+    rlFields = db.relationship('UserModel', backref='user')
+
+    def __init__(self, User_id, File_id, File_name, Field_name):
+        self.User_id = User_id
+        self.File_id = File_id
+        self.File_name = File_name
+        self.Field_name = Field_name
+
+    def json(self):
+        return {
+            'ID': self.ID,
+            'User_id': self.User_id,
+            'File_id': self.File_id,
+            'File_name': self.File_name,
+            'Field_name': self.Field_name
+            }
+
+    @classmethod
+    def get_user_fields(cls, userid):
+        return cls.query.filter_by(User_id=userid).all()
+
+    @classmethod
+    def fieldExist_in_user(cls, fieldname):
+        current_user_id = get_jwt_identity()
+        record = cls.query.filter_by(User_id=current_user_id, Field_name=fieldname).count()
+        if record >= 1:
+            return True
+        return False
+        
+    def save_to_db(self):
+        db.session.add(self)
+        db.session.commit()

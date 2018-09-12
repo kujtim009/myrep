@@ -1,6 +1,7 @@
 from db import db, ma
 from flask import jsonify
-
+from flask_jwt_extended import get_jwt_identity
+from models.user import Userinfo
 
 class ItemModel(db.Model):
     __tablename__ = 'test_master_licence'
@@ -15,17 +16,30 @@ class ItemModel(db.Model):
     Business_phone = db.Column(db.String(20))
 
 
-fields = ['RecordID', 'Company_name', 'Business_state', 'Individual_name']
-
-
 class RecordSchema(ma.ModelSchema):
-    class Meta:
+       
+    class Meta():
         model = ItemModel
+        # fields = fieldlist
+
+    @staticmethod
+    def get_user_fields():
+        userID = get_jwt_identity()
+        record = Userinfo.get_user_fields(userID)
+        if record:
+            jsonRec = {'User_fields': [field.json() for field in record]}
+        else:
+            jsonRec = {'User_fields': []}
+        
+        # jsonRec = {'User_fields': '[]'} 
+        mylist = [rec["Field_name"] for rec in jsonRec["User_fields"]]   
+        return mylist  
+
 
     @classmethod
     def find_by_licence(cls, license):
         result = ItemModel.query.filter_by(Professional_license_number=license).all()
-        record_schema = RecordSchema(many=True)
+        record_schema = RecordSchema(many=True, only=cls.get_user_fields())
         output = record_schema.dump(result)
         return jsonify({'Records': output})
 
@@ -41,39 +55,36 @@ class RecordSchema(ma.ModelSchema):
         else:
             result = ItemModel.query.filter_by(Professional_license_number=license, Business_state=state).all()
 
-        record_schema = RecordSchema(many=True)
+        # fields = cls.get_user_fields()
+        
+        record_schema = RecordSchema(many=True, only=cls.get_user_fields())
         output = record_schema.dump(result)
         return jsonify({'Records': output})
 
     @classmethod
     def find_by_state(cls, state):
         result = ItemModel.query.filter_by(Business_state=state).all()
-        record_schema = RecordSchema(many=True)
+        record_schema = RecordSchema(many=True, only=cls.get_user_fields())
         output = record_schema.dump(result)
         return jsonify({'Records': output})
 
     @classmethod
     def get_all_records(cls):
-        # result = ItemModel.query.all()
-        # record_schema = RecordSchema(many=True)
-        # output = record_schema.dump(result)
-        # return jsonify({'Records': output})
-        result = ItemModel.query.with_entities(ItemModel.Company_name).all()
-
-        record_schema = RecordSchema(many=True)
+        result = ItemModel.query.all()
+        record_schema = RecordSchema(many=True, only=cls.get_user_fields())
         output = record_schema.dump(result)
         return jsonify({'Records': output})
 
     @classmethod
     def find_by_individual(cls, individual):
         result = ItemModel.query.filter(ItemModel.Individual_name.contains(individual)).all()
-        record_schema = RecordSchema(many=True)
+        record_schema = RecordSchema(many=True, only=cls.get_user_fields())
         output = record_schema.dump(result)
         return jsonify({'Records': output})
 
     @classmethod
     def find_by_compnay(cls, company):
         result = ItemModel.query.filter(ItemModel.Company_name.contains(company)).all()
-        record_schema = RecordSchema(many=True)
+        record_schema = RecordSchema(many=True, only=cls.get_user_fields())
         output = record_schema.dump(result)
         return jsonify({'Records': output})

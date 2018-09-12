@@ -5,7 +5,7 @@ from flask_jwt_extended import (
     fresh_jwt_required,
     get_jwt_identity)
 from models.records import RecordSchema
-
+from models.user import Userinfo
 
 class Record_by_license(Resource):
     @jwt_required
@@ -62,3 +62,14 @@ class Record_by_company_name(Resource):
         if record:
             return record
         return {'message': 'record not found'}, 404
+
+
+class getCurUserFields(Resource):
+    @jwt_required
+    def get(self):
+        userID = get_jwt_identity()
+        record = Userinfo.get_user_fields(userID)
+        if record:
+            # return {'User_fields': list(map(lambda x: x.json(), record))}
+            return {'User_fields': [field.json() for field in record]}
+        return {'message': 'record not found'}, 404        

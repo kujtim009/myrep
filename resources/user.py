@@ -1,5 +1,5 @@
-from flask_restful import Resource, reqparse
-from models.user import UserModel
+from flask_restful import Resource, reqparse, request
+from models.user import UserModel, Userinfo
 from werkzeug.security import safe_str_cmp
 from flask_jwt_extended import (
     create_access_token,
@@ -34,6 +34,28 @@ _user_parser.add_argument('access_level',
                         )
 
 
+
+_user_fields = reqparse.RequestParser()
+
+# _user_fields.add_argument('File_id',
+#                         type=int,
+#                         required=True,
+#                         help="This field cannot be blank."
+#                         )
+
+# _user_fields.add_argument('File_name',
+#                         type=str,
+#                         required=False,
+#                         help="This field cannot be blank."
+#                         )
+
+# _user_fields.add_argument('Field_name',
+#                         type=str,
+#                         required=False,
+#                         help="This field cannot be blank."
+#                         )                        
+
+
 class UserRegister(Resource):
     @fresh_jwt_required
     def post(self):
@@ -47,6 +69,25 @@ class UserRegister(Resource):
         user.save_to_db()
 
         return {"message": "User created successfully."}, 201
+
+
+class Add_allowed_fields(Resource):
+    @fresh_jwt_required
+    def post(self):
+        if not UserModel.is_admin():
+            return {'message': 'Admin privileges required'}
+        data = request.get_json()
+        
+        current_user = get_jwt_identity()
+        message = ""
+        for row in data:
+            if Userinfo.fieldExist_in_user(row['Field_name']) is not True:
+                userfields = Userinfo(current_user, row["File_id"], row["File_name"], row["Field_name"])
+                userfields.save_to_db()
+            else:
+                message = ", one or more fields already existed on the list!"
+
+        return {"message": "Fields added successfully{}".format(message)}, 201
 
 
 class User(Resource):
@@ -80,8 +121,8 @@ class UserLogin(Resource):
         data = _user_parser.parse_args()
         user = UserModel.find_by_username(data['username'])
         if user and safe_str_cmp(user.password, data['password']):
-            access_token = create_access_token(identity=user.id, fresh=True)
-            refresh_token = create_refresh_token(user.id)
+            access_token = create_access_token(identity=user.ID, fresh=True)
+            refresh_token = create_refresh_token(user.ID)
             return {
                 'access_token': access_token,
                 'refresh_token': refresh_token
