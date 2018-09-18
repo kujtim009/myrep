@@ -4,20 +4,26 @@ from flask_jwt_extended import get_jwt_identity
 from models.user import Userinfo
 
 class ItemModel(db.Model):
-    __tablename__ = 'test_master_licence'
+    __tablename__ = 'Master_Layout'
 
 
-    RecordID = db.Column(db.Integer, primary_key=True)
+    Record_id = db.Column(db.Integer, primary_key=True)
     Company_name = db.Column(db.String(80))
-    Individual_name = db.Column(db.String(80))
-    Professional_license_number = db.Column(db.String(40))
+    First_name = db.Column(db.String(80))
+    Middle_Initial = db.Column(db.String(80))
+    Last_name = db.Column(db.String(80))
+    License_Number = db.Column(db.String(40))
     Business_address_1 = db.Column(db.String(80))
     Business_state = db.Column(db.String(20))
     Business_phone = db.Column(db.String(20))
-
+    License_type = db.Column(db.String(20))
+    Profession = db.Column(db.String(200))
+    Business_city = db.Column(db.String(200))
+    Business_zip_5 = db.Column(db.String(200))
+    Business_zip_4 = db.Column(db.String(200))
 
 class RecordSchema(ma.ModelSchema):
-       
+    record_output = 100   
     class Meta():
         model = ItemModel
         # fields = fieldlist
@@ -38,53 +44,103 @@ class RecordSchema(ma.ModelSchema):
 
     @classmethod
     def find_by_licence(cls, license):
-        result = ItemModel.query.filter_by(Professional_license_number=license).all()
+        result = ItemModel.query.filter_by(License_Number=license).limit(cls.record_output).all()
         record_schema = RecordSchema(many=True, only=cls.get_user_fields())
         output = record_schema.dump(result)
         return jsonify({'Records': output})
 
     @classmethod
-    def find_by_licence_and_state(cls, license, state):
-        if license is None and state is None:
+    def find_by_licence_and_state(cls, license, state, prof):
+
+        if license is None and state is None and prof is None:
             return jsonify({'Records': 'Search input is missing!'})
 
-        if license is not None and state is None:
-            result = ItemModel.query.filter_by(Professional_license_number=license).all()
-        elif license is None and state is not None:
-            result = ItemModel.query.filter_by(Business_state=state).all()
-        else:
-            result = ItemModel.query.filter_by(Professional_license_number=license, Business_state=state).all()
+        if license is not None and state is not None and prof is not None:
+            result = ItemModel.query.filter_by(License_Number=license, Business_state=state, Profession=prof).limit(cls.record_output).all()
 
-        # fields = cls.get_user_fields()
+        elif license is not None and state is None and prof is None:
+            result = ItemModel.query.filter_by(License_Number=license).limit(cls.record_output).all()    
+
+        elif license is None and state is not None and prof is None:
+            result = ItemModel.query.filter_by(Business_state=state).limit(cls.record_output).all()
+
+        elif license is None and state is not None and prof is not None:
+            result = ItemModel.query.filter_by(Business_state=state, Profession=prof).limit(cls.record_output).all()
+
+        elif license is not None and state is None and prof is not None:
+            result = ItemModel.query.filter_by(License_Number=license, Profession=prof).limit(cls.record_output).all()    
         
+        elif license is None and state is None and prof is not None:
+            result = ItemModel.query.filter_by(Profession=prof).limit(cls.record_output).all()
+
+        else:
+            return jsonify({'Records': 'Search input is missing!'})
+
+        fields = cls.get_user_fields()
         record_schema = RecordSchema(many=True, only=cls.get_user_fields())
         output = record_schema.dump(result)
         return jsonify({'Records': output})
 
     @classmethod
     def find_by_state(cls, state):
-        result = ItemModel.query.filter_by(Business_state=state).all()
+        result = ItemModel.query.filter_by(Business_state=state).limit(cls.record_output).all()
         record_schema = RecordSchema(many=True, only=cls.get_user_fields())
         output = record_schema.dump(result)
         return jsonify({'Records': output})
 
     @classmethod
     def get_all_records(cls):
-        result = ItemModel.query.all()
+        result = ItemModel.query.limit(cls.record_output).all()
         record_schema = RecordSchema(many=True, only=cls.get_user_fields())
         output = record_schema.dump(result)
         return jsonify({'Records': output})
 
     @classmethod
-    def find_by_individual(cls, individual):
-        result = ItemModel.query.filter(ItemModel.Individual_name.contains(individual)).all()
+    def find_by_individual(cls, firstName, middleName, lastName):
+        if firstName is None and middleName is None and lastName is None:
+            return jsonify({'Records': 'Search input is missing!'})
+
+        if firstName is not None and middleName is not None and lastName is not None:
+            result = ItemModel.query.filter_by(First_name=firstName, Middle_Initial=middleName, Last_name=lastName).limit(cls.record_output).all()
+
+        elif firstName is not None and middleName is None and lastName is None:
+            result = ItemModel.query.filter_by(First_name=firstName).limit(cls.record_output).all()    
+
+        elif firstName is None and middleName is not None and lastName is None:
+            result = ItemModel.query.filter_by(Middle_Initial=middleName).limit(cls.record_output).all()
+
+        elif firstName is None and middleName is not None and lastName is not None:
+            result = ItemModel.query.filter_by(Middle_Initial=middleName, Last_name=lastName).limit(cls.record_output).all()
+
+        elif firstName is not None and middleName is None and lastName is not None:
+            result = ItemModel.query.filter_by(First_name=firstName, Last_name=lastName).limit(cls.record_output).all()    
+        
+        elif firstName is None and middleName is None and lastName is not None:
+            result = ItemModel.query.filter_by(Last_name=lastName).limit(cls.record_output).all()
+
+        else:
+            return jsonify({'Records': 'Search input is missing!'})
+
+        fields = cls.get_user_fields()
         record_schema = RecordSchema(many=True, only=cls.get_user_fields())
         output = record_schema.dump(result)
         return jsonify({'Records': output})
+
 
     @classmethod
     def find_by_compnay(cls, company):
-        result = ItemModel.query.filter(ItemModel.Company_name.contains(company)).all()
+        # result = ItemModel.query.filter(ItemModel.Company_name.contains(company)).limit(cls.record_output).all()
+        result = ItemModel.query.filter(Business_state = company).limit(cls.record_output).all()
         record_schema = RecordSchema(many=True, only=cls.get_user_fields())
         output = record_schema.dump(result)
         return jsonify({'Records': output})
+
+    @classmethod
+    def getProfessions(cls):
+        result = db.session.query(ItemModel.Profession, db.func.count(ItemModel.Profession)).group_by(ItemModel.Profession).all()
+        # record_schema = RecordSchema(many=True)
+        # output = record_schema.dump(result)
+        # return jsonify({'Records': output})
+        
+            
+        return result

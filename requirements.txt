@@ -4,3 +4,5 @@ Flask-Restful
 Flask-SQLAlchemy
 Flask-marshmallow
 marshmallow-SQLAlchemy
+flask-cors
+pyodbc

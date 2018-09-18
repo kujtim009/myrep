@@ -11,7 +11,8 @@ from resources.user import (
         UserLogin, 
         TokenRefresh, 
         UserLogout, 
-        Add_allowed_fields)
+        Add_allowed_fields,
+        TestAPI)
 from models.user import UserModel
 import models.parameters as prm
 from resources.records import (
@@ -19,15 +20,16 @@ from resources.records import (
         RecordList,
         Record_by_state,
         Record_by_Individual_name,
-        Record_by_license_and_state,
+        Record_by_license_and_state_prof,
         Record_by_company_name,
-        getCurUserFields)
+        getCurUserFields,
+        getProfessions)
 
 
 app = Flask(__name__)
 CORS(app)
-quoted = urllib.parse.quote_plus('DRIVER={SQL Server};SERVER=KUJTIM_OFFICEPC\SQL_API_SERVER;DATABASE=APIDB;Trusted_Connection=yes;')
-app.config['SQLALCHEMY_DATABASE_URI'] = "mssql+pyodbc:///{}:{}@?odbc_connect={}".format(prm.sql_username, prm.sql_password, quoted)
+quoted = urllib.parse.quote_plus("DRIVER={SQL Server};SERVER=192.168.2.198\ITPLF;UID=" + prm.sql_username + ";PWD=" + prm.sql_password + ";DATABASE=InsertTool;Trusted_Connection=no;")
+app.config['SQLALCHEMY_DATABASE_URI'] = "mssql+pyodbc:///?odbc_connect={}".format(quoted)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PROPAGATE_EXCEPTIONS'] = True
 app.config['JWT_SECRET_KEY'] = prm.jwt_secret_key_stored
@@ -35,7 +37,7 @@ app.config['JWT_BLACKLIST_ENABLED'] = True
 app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
 
 api = Api(app)
-
+print("Username: {} and Password: {}".format(prm.sql_username, prm.sql_password))
 @app.before_first_request
 def create_tables():
     db.create_all()
@@ -96,9 +98,10 @@ def token_not_fresh_callback():
     }), 401
 
 
+api.add_resource(TestAPI, '/test')
 api.add_resource(Record_by_license, '/licence/<int:license>')
 api.add_resource(Record_by_state, '/state/<string:state>')
-api.add_resource(Record_by_Individual_name, '/full_name/<string:individual>')
+api.add_resource(Record_by_Individual_name, '/full_name')
 api.add_resource(RecordList, '/all_records')
 api.add_resource(UserRegister, '/register')
 api.add_resource(User, '/user/<int:user_id>')
@@ -106,10 +109,11 @@ api.add_resource(UsersList, '/users')
 api.add_resource(UserLogin, '/auth')
 api.add_resource(TokenRefresh, '/refresh')
 api.add_resource(UserLogout, '/logout')
-api.add_resource(Record_by_license_and_state, '/lic_state')
+api.add_resource(Record_by_license_and_state_prof, '/lic_state')
 api.add_resource(Record_by_company_name, '/company_name/<string:company>')
 api.add_resource(getCurUserFields, '/usersField')
 api.add_resource(Add_allowed_fields, '/addUserFields')
+api.add_resource(getProfessions, '/professions')
 
 if __name__ == '__main__':
     from db import db

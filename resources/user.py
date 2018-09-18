@@ -1,5 +1,6 @@
 from flask_restful import Resource, reqparse, request
 from models.user import UserModel, Userinfo
+import models.parameters as prm
 from werkzeug.security import safe_str_cmp
 from flask_jwt_extended import (
     create_access_token,
@@ -35,25 +36,7 @@ _user_parser.add_argument('access_level',
 
 
 
-_user_fields = reqparse.RequestParser()
-
-# _user_fields.add_argument('File_id',
-#                         type=int,
-#                         required=True,
-#                         help="This field cannot be blank."
-#                         )
-
-# _user_fields.add_argument('File_name',
-#                         type=str,
-#                         required=False,
-#                         help="This field cannot be blank."
-#                         )
-
-# _user_fields.add_argument('Field_name',
-#                         type=str,
-#                         required=False,
-#                         help="This field cannot be blank."
-#                         )                        
+_user_fields = reqparse.RequestParser()                     
 
 
 class UserRegister(Resource):
@@ -144,3 +127,8 @@ class TokenRefresh(Resource):
         current_user = get_jwt_identity()
         new_token = create_access_token(identity=current_user, fresh=False)
         return {'access_token': new_token}, 200
+
+
+class TestAPI(Resource):
+    def get(self):
+        return {'message': prm.sql_username}

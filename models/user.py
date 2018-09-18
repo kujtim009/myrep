@@ -3,7 +3,7 @@ from flask_jwt_extended import get_jwt_claims, get_jwt_identity
 
 
 class UserModel(db.Model):
-    __tablename__ = 'Users'
+    __tablename__ = 'api_fgx_Users'
 
     ID = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80))
@@ -48,10 +48,10 @@ class UserModel(db.Model):
 
     
 class Userinfo(db.Model):
-    __tablename__ = 'Users_info'
+    __tablename__ = 'api_fgx_Users_info'
 
     ID = db.Column(db.Integer, primary_key=True)
-    User_id = db.Column(db.Integer, db.ForeignKey('Users.ID'))
+    User_id = db.Column(db.Integer, db.ForeignKey('api_fgx_Users.ID'))
     File_id = db.Column(db.Integer)
     File_name = db.Column(db.String(100))
     Field_name = db.Column(db.String(100))
@@ -83,7 +83,7 @@ class Userinfo(db.Model):
         if record >= 1:
             return True
         return False
-        
+
     def save_to_db(self):
         db.session.add(self)
         db.session.commit()

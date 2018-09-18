@@ -16,13 +16,14 @@ class Record_by_license(Resource):
         return {'message': 'record not found'}, 404
 
 
-class Record_by_license_and_state(Resource):
+class Record_by_license_and_state_prof(Resource):
     @jwt_required
     def get(self):
         license = request.args.get('license', None)
         state = request.args.get('state', None)
+        prof = request.args.get('profession', None)
 
-        record = RecordSchema.find_by_licence_and_state(license, state)
+        record = RecordSchema.find_by_licence_and_state(license, state, prof)
         if record:
             return record
         return {'message': 'record not found'}, 404
@@ -48,8 +49,12 @@ class Record_by_state(Resource):
 
 class Record_by_Individual_name(Resource):
     @jwt_required
-    def get(self, individual):
-        record = RecordSchema.find_by_individual(individual)
+    def get(self):
+        first_name = request.args.get('fName', None)
+        middle_name = request.args.get('mName', None)
+        last_name = request.args.get('lName', None)
+
+        record = RecordSchema.find_by_individual(first_name, middle_name, last_name)
         if record:
             return record
         return {'message': 'record not found'}, 404
@@ -73,3 +78,13 @@ class getCurUserFields(Resource):
             # return {'User_fields': list(map(lambda x: x.json(), record))}
             return {'User_fields': [field.json() for field in record]}
         return {'message': 'record not found'}, 404        
+
+
+class getProfessions(Resource):
+    @jwt_required
+    def get(self):
+        record = RecordSchema.getProfessions()
+        if record:
+            test =  {key: value for (key, value) in record}
+            return test
+        return {'message': 'record not found'}, 404  
