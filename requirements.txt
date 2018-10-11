@@ -9,7 +9,8 @@ uwsgi
 psycopg2
 pyodbc
 flask-cors
-
+passlib
+werkzeug
 
 
 
