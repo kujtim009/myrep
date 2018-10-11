@@ -1,4 +1,5 @@
 from flask import Flask, jsonify
+from flask_sslify import SSLify
 from flask_restful import Api
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS, cross_origin
@@ -12,7 +13,8 @@ from resources.user import (
         TokenRefresh, 
         UserLogout, 
         Add_allowed_fields,
-        TestAPI)
+        TestAPI,
+        removeUserFields)
 from models.user import UserModel
 import models.parameters as prm
 from resources.records import (
@@ -23,21 +25,31 @@ from resources.records import (
         Record_by_license_and_state_prof,
         Record_by_company_name,
         getCurUserFields,
-        getProfessions)
+        getProfessions,
+        Record_by_license_owner,
+        GetAllFieldNames,
+        GetRecCounts_LSP,
+        GetRecCounts_LON,
+        GetRecCounts_CPN)
 
 
 app = Flask(__name__)
+sslify = SSLify(app)
 CORS(app)
-quoted = urllib.parse.quote_plus("DRIVER={SQL Server};SERVER=192.168.2.198\ITPLF;UID=" + prm.sql_username + ";PWD=" + prm.sql_password + ";DATABASE=InsertTool;Trusted_Connection=no;")
+#quoted = urllib.parse.quote_plus("DRIVER={SQL Server};SERVER=192.168.2.198\ITPLF;UID=" + prm.sql_username + ";PWD=" + prm.sql_password + ";DATABASE=InsertTool;Trusted_Connection=no;")
+quoted = urllib.parse.quote_plus("DRIVER={SQL Server};SERVER=208.118.231.180,21201;UID=" + prm.sql_username + ";PWD=" + prm.sql_password + ";DATABASE=InsertTool;Trusted_Connection=no;")
+
 app.config['SQLALCHEMY_DATABASE_URI'] = "mssql+pyodbc:///?odbc_connect={}".format(quoted)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PROPAGATE_EXCEPTIONS'] = True
 app.config['JWT_SECRET_KEY'] = prm.jwt_secret_key_stored
 app.config['JWT_BLACKLIST_ENABLED'] = True
 app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
+app.config['ENV'] = ''
 
 api = Api(app)
-print("Username: {} and Password: {}".format(prm.sql_username, prm.sql_password))
+
+# print("Username: {} and Password: {}".format(prm.sql_username, prm.sql_password))
 @app.before_first_request
 def create_tables():
     db.create_all()
@@ -111,12 +123,17 @@ api.add_resource(TokenRefresh, '/refresh')
 api.add_resource(UserLogout, '/logout')
 api.add_resource(Record_by_license_and_state_prof, '/lic_state')
 api.add_resource(Record_by_company_name, '/company_name/<string:company>')
+api.add_resource(Record_by_license_owner, '/license_owner/<string:licOwner>')
 api.add_resource(getCurUserFields, '/usersField')
 api.add_resource(Add_allowed_fields, '/addUserFields')
+api.add_resource(removeUserFields, '/removeusrfields')
 api.add_resource(getProfessions, '/professions')
+api.add_resource(GetAllFieldNames, '/all_fields')
+api.add_resource(GetRecCounts_LSP, '/get_counts_lsp')
+api.add_resource(GetRecCounts_LON, '/get_counts_LON/<string:licOwner>')
+api.add_resource(GetRecCounts_CPN, '/get_counts_CPN/<string:company>')
 
 if __name__ == '__main__':
     from db import db
     db.init_app(app)
-
     app.run(port=5000, debug=True)

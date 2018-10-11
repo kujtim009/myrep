@@ -1,4 +1,5 @@
 from flask_restful import Resource, reqparse, request
+from passlib.hash import sha256_crypt
 from models.user import UserModel, Userinfo
 import models.parameters as prm
 from werkzeug.security import safe_str_cmp
@@ -47,8 +48,8 @@ class UserRegister(Resource):
         data = _user_parser.parse_args()
         if UserModel.find_by_username(data['username']):
             return {"message": "A user with that username already exists"}, 400
-
-        user = UserModel(data['username'], data['password'], data['access_level'])
+        password = sha256_crypt.encrypt(data['password'])
+        user = UserModel(data['username'], password, data['access_level'])
         user.save_to_db()
 
         return {"message": "User created successfully."}, 201
@@ -57,15 +58,22 @@ class UserRegister(Resource):
 class Add_allowed_fields(Resource):
     @fresh_jwt_required
     def post(self):
-        if not UserModel.is_admin():
-            return {'message': 'Admin privileges required'}
+        # if not UserModel.is_admin():
+        #     return {'message': 'Admin privileges required'}
         data = request.get_json()
-        
-        current_user = get_jwt_identity()
         message = ""
+        arg_usr_id = request.args.get('uid', None)
+
         for row in data:
-            if Userinfo.fieldExist_in_user(row['Field_name']) is not True:
-                userfields = Userinfo(current_user, row["File_id"], row["File_name"], row["Field_name"])
+            if arg_usr_id is None:
+                userid = get_jwt_identity()
+            else:
+                userid = row["User_id"]
+
+            fieldName = row["Field_name"]
+            
+            if Userinfo.fieldExist_in_user(userid, fieldName) is not True:
+                userfields = Userinfo(userid, row["View_state"], row["File_name"], fieldName, row["Order"])
                 userfields.save_to_db()
             else:
                 message = ", one or more fields already existed on the list!"
@@ -103,7 +111,8 @@ class UserLogin(Resource):
     def post(cls):
         data = _user_parser.parse_args()
         user = UserModel.find_by_username(data['username'])
-        if user and safe_str_cmp(user.password, data['password']):
+        # if user and safe_str_cmp(user.password, data['password']):
+        if user and sha256_crypt.verify(data['password'], user.password):
             access_token = create_access_token(identity=user.ID, fresh=True)
             refresh_token = create_refresh_token(user.ID)
             return {
@@ -132,3 +141,17 @@ class TokenRefresh(Resource):
 class TestAPI(Resource):
     def get(self):
         return {'message': prm.sql_username}
+
+
+
+class removeUserFields(Resource):
+    @fresh_jwt_required
+    def post(self):
+        # if not UserModel.is_admin():
+        #     return {'message': 'Admin privileges required'}
+        data = request.get_json()
+        message = ""
+        for row in data["deletes"]:
+            fieldID = row["id"]
+            Userinfo.deletefield(fieldID)
+        return {"message": "Rows deleted succesfuly"}, 201

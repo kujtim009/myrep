@@ -6,6 +6,7 @@ from flask_jwt_extended import (
     get_jwt_identity)
 from models.records import RecordSchema
 from models.user import Userinfo
+from models.layout import LayoutModel
 
 class Record_by_license(Resource):
     @jwt_required
@@ -63,21 +64,37 @@ class Record_by_Individual_name(Resource):
 class Record_by_company_name(Resource):
     @jwt_required
     def get(self, company):
-        record = RecordSchema.find_by_compnay(company)
+        srch_type = request.args.get('src_tp', None)
+        record = RecordSchema.find_by_compnay(company, srch_type)
         if record:
             return record
         return {'message': 'record not found'}, 404
 
 
+class Record_by_license_owner(Resource):
+    @jwt_required
+    def get(self, licOwner):
+        srch_type = request.args.get('src_tp', None)
+        record = RecordSchema.find_by_license_owner(licOwner, srch_type)
+        if record:
+            return record
+        return {'message': 'record not found'}, 404        
+
+
 class getCurUserFields(Resource):
     @jwt_required
     def get(self):
-        userID = get_jwt_identity()
-        record = Userinfo.get_user_fields(userID)
+        prmUserID = request.args.get('uid', None)
+        if prmUserID is None:
+            userID = get_jwt_identity()
+            record = Userinfo.get_all_user_fields(userID)
+        else:
+            record = Userinfo.get_all_user_fields(prmUserID)
+
         if record:
             # return {'User_fields': list(map(lambda x: x.json(), record))}
             return {'User_fields': [field.json() for field in record]}
-        return {'message': 'record not found'}, 404        
+        return {'message': 'No columns available!'}, 404        
 
 
 class getProfessions(Resource):
@@ -88,3 +105,45 @@ class getProfessions(Resource):
             test =  {key: value for (key, value) in record}
             return test
         return {'message': 'record not found'}, 404  
+
+class GetAllFieldNames(Resource):
+    @jwt_required
+    def get(self):
+        record = LayoutModel.find_by_exportID(2068)
+        if record:
+            return {'Project_fields': [field.json() for field in record]}
+        return {'message': 'record not found'}, 404    
+
+
+class GetRecCounts_LSP(Resource):
+    @jwt_required
+    def get(self):
+
+        license = request.args.get('license', None)
+        state = request.args.get('state', None)
+        prof = request.args.get('profession', None)
+
+        record = RecordSchema.getCounts_lsp(license, state, prof)
+        if record:
+            return {'count':record}
+        return {'message': 'record not found'}, 404   
+
+
+class GetRecCounts_LON(Resource):
+    @jwt_required
+    def get(self, licOwner):
+        srch_type = request.args.get('src_tp', None)
+        record = RecordSchema.getCounts_LON(licOwner, srch_type)
+        if record:
+            return {'count':record}
+        return {'message': 'record not found'}, 404               
+
+
+class GetRecCounts_CPN(Resource):
+    @jwt_required
+    def get(self, company):
+        srch_type = request.args.get('src_tp', None)
+        record = RecordSchema.getCounts_CPN(company, srch_type)
+        if record:
+            return {'count':record}
+        return {'message': 'record not found'}, 404   

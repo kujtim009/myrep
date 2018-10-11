@@ -1,7 +1,0 @@
-Load specific filelds on sqlalchemy
-
-from sqlalchemy.orm import load_only
-
-fields = ['name', 'addr', 'phone', 'url']
-companies = session.query(Company).options(load_only(*fields)).all()
-#######################################################################
