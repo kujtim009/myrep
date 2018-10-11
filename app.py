@@ -49,11 +49,6 @@ app.config['ENV'] = ''
 
 api = Api(app)
 
-# print("Username: {} and Password: {}".format(prm.sql_username, prm.sql_password))
-@app.before_first_request
-def create_tables():
-    db.create_all()
-
 
 jwt = JWTManager(app)  # /auth
 
